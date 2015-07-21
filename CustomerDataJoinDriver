@@ -1,0 +1,56 @@
+package com.reducer.side.join;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
+import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+
+public class CustomerDataJoinDriver {
+
+	public static void main(String[] parameter) throws IOException, InterruptedException, ClassNotFoundException, URISyntaxException {
+		
+		if(parameter.length!=3){
+			System.exit(-1);
+		}
+
+		Path mapInput1 = new Path(parameter[0]);
+		Path mapInput2 = new Path(parameter[1]);
+		//String out = parameter[2];
+		Path out=new Path(parameter[2]);
+		
+		Job job = Job.getInstance(new Configuration());
+		job.setJarByClass(CustomerDataJoinDriver.class);
+		job.setJobName("CustomerDataJoin");
+
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Text.class);
+		job.setInputFormatClass(TextInputFormat.class);
+		job.setOutputFormatClass(TextOutputFormat.class);
+
+		// Mapper class for UserDetails
+		MultipleInputs.addInputPath(job, mapInput1, TextInputFormat.class, UserDetailsMapper.class);
+		// Mapper class for DeliveryDetails
+		MultipleInputs.addInputPath(job, mapInput2, TextInputFormat.class, DeliveryDetailsMapper.class);
+		// Reducer
+		job.setReducerClass(CustomerReducer.class);
+		FileOutputFormat.setOutputPath(job,out);
+		out.getFileSystem(job.getConfiguration()).delete(out);
+		
+		//Distributed cache file;
+		
+		DistributedCache.addCacheFile(new URI("/user/prashant/customerData/customerDelvrData/DeliveryStatusCodes.txt"), job.getConfiguration());
+		job.submit();
+		job.waitForCompletion(true);
+
+	}
+
+}
