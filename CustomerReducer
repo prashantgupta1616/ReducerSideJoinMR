@@ -1,0 +1,58 @@
+package com.reducer.side.join;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Iterator;
+
+import org.apache.hadoop.filecache.DistributedCache;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+public class CustomerReducer extends Reducer<Text, Text, Text, Text> {
+	private BufferedReader brReader;
+	private String deliveryReport, customername;
+	private static HashMap<String, String> DeliveryCodesMap = new HashMap<String, String>();
+
+	@Override
+	public void reduce(Text key, Iterable<Text> val, Context context) throws IOException, InterruptedException {
+		String delCode = null;
+		Iterator<Text> it = val.iterator();
+
+		while (it.hasNext()) {
+
+			String[] s = it.next().toString().split(",");
+
+			if (s[0].equalsIgnoreCase("userData")) {
+				customername = s[1];
+			} else if (s[0].equalsIgnoreCase("DeliveryData")) {
+				delCode = s[1];
+			}
+		}
+		deliveryReport = DeliveryCodesMap.get(delCode.trim());
+		context.write(new Text(customername), new Text(deliveryReport));
+	}
+
+	@Override
+	public void setup(Context context) throws IOException {
+
+		Path[] cacheFilesLocal = DistributedCache.getLocalCacheFiles(context.getConfiguration());
+
+		for (Path path : cacheFilesLocal) {
+			brReader = new BufferedReader(new FileReader(path.toString()));
+			// Read each line, split and load to HashMap
+			String strLineRead;
+			while ((strLineRead = brReader.readLine()) != null) {
+				String splitarray[] = strLineRead.split(",");
+				DeliveryCodesMap.put(splitarray[0].trim(), splitarray[1].trim());
+			}
+
+		}
+		if (brReader != null) {
+			brReader.close();
+		}
+	}
+
+}
