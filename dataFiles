@@ -1,0 +1,35 @@
+data Files
+=================
+
+UserDetails.txt
+==================
+123456, Jim
+456123, Tom
+789123, Harry
+789456, Richa
+
+
+
+DeliveryDetails.txt
+==================
+123456, 001
+456123, 002
+789123, 003
+789456, 004
+
+
+
+DeliveryStatusCodes.txt
+=======================
+001, Delivered
+002, Pending
+003, Failed
+004, Resend
+
+
+
+Final Ouput :
+Jim, Delivered
+Tom, Pending
+Harry, Failed
+Richa, Resend
